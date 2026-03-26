@@ -3,8 +3,8 @@ FROM node:18-alpine AS builder
 
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
+# Copy package.json only (not package-lock.json to avoid version conflicts)
+COPY package.json ./
 
 # Install all dependencies (including devDependencies for build)
 RUN npm install
@@ -21,8 +21,8 @@ FROM node:18-alpine
 
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
+# Copy package.json only
+COPY package.json ./
 
 # Install only production dependencies
 RUN npm install --omit=dev
