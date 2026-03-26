@@ -34,13 +34,22 @@ export default function MapComponent({
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return;
 
-    // Create map with world view (zoom level 2)
+    // Create map centered on Thailand
     const map = L.map(mapContainerRef.current, {
-      center: [20, 0],
-      zoom: 2,
+      center: [13.7563, 100.5018], // Bangkok, Thailand
+      zoom: 6, // Zoom level to show Thailand
       zoomControl: true,
       scrollWheelZoom: true,
+      minZoom: 5, // Prevent zooming out too far
+      maxZoom: 19,
     });
+
+    // Set max bounds to restrict panning to Thailand region
+    const thailandBounds = L.latLngBounds(
+      L.latLng(5.5, 97.0), // Southwest corner (Southern Thailand)
+      L.latLng(20.5, 106.0), // Northeast corner (Northern Thailand)
+    );
+    map.setMaxBounds(thailandBounds);
 
     // Add OpenStreetMap tiles
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
