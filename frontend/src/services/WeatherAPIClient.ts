@@ -139,6 +139,8 @@ export class WeatherAPIClient {
 export function createWeatherAPIClient(baseURL?: string): WeatherAPIClient {
   // Use provided baseURL, or fall back to environment variable, or default
   const url =
-    baseURL || import.meta.env.VITE_API_URL || "http://localhost:3001";
+    baseURL ||
+    import.meta.env.VITE_API_URL ||
+    "https://weather-api.thebrainsurf.site";
   return new WeatherAPIClient(url);
 }

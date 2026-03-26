@@ -63,7 +63,7 @@ function App() {
   return (
     <div className="App">
       <header className="app-header">
-        <h1>Weather Map Application</h1>
+        <h1>Weather Map Application V2</h1>
         <p className="app-subtitle">
           Click anywhere on the map to view weather data
         </p>
