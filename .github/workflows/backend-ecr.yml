@@ -150,6 +150,7 @@ jobs:
 
       - name: Update Kubernetes manifest
         if: success()
+        id: update-manifest
         run: |
           git clone https://${{ secrets.GIT_TOKEN }}@github.com/theerawatzuz/terraform-eks-scg-demo.git
           cd terraform-eks-scg-demo
@@ -163,3 +164,45 @@ jobs:
           git add kubernetes/apps/weather-map/backend/deployment.yaml
           git commit -m "chore: update backend image to prod-${{ steps.meta.outputs.timestamp }}"
           git push
+
+          echo "new_image=$NEW_IMAGE" >> $GITHUB_OUTPUT
+
+      - name: Discord notification - Manifest updated
+        if: success() && steps.update-manifest.outcome == 'success'
+        run: |
+          curl -H "Content-Type: application/json" \
+            -d '{
+              "content": "🔄 **Backend Manifest Updated**",
+              "embeds": [{
+                "title": "Kubernetes Deployment Updated",
+                "color": 5793266,
+                "fields": [
+                  {"name": "Service", "value": "Backend", "inline": true},
+                  {"name": "Repository", "value": "terraform-eks-scg-demo", "inline": true},
+                  {"name": "File", "value": "kubernetes/apps/weather-map/backend/deployment.yaml", "inline": false},
+                  {"name": "New Image", "value": "`${{ steps.update-manifest.outputs.new_image }}`", "inline": false},
+                  {"name": "Commit", "value": "chore: update backend image to prod-${{ steps.meta.outputs.timestamp }}", "inline": false}
+                ]
+              }]
+            }' \
+            https://discord.com/api/webhooks/1486690920761004093/a2sIUqGTl4KptVos4_WAaj8wIFnZgSSIlx9nLitspBM0z3qJCryw1ivUwdkVWn0u2VTe
+
+      - name: Discord notification - Manifest update failed
+        if: failure() && steps.update-manifest.outcome == 'failure'
+        run: |
+          curl -H "Content-Type: application/json" \
+            -d '{
+              "content": "❌ **Backend Manifest Update Failed**",
+              "embeds": [{
+                "title": "Failed to Update Kubernetes Deployment",
+                "color": 15158332,
+                "fields": [
+                  {"name": "Service", "value": "Backend", "inline": true},
+                  {"name": "Repository", "value": "terraform-eks-scg-demo", "inline": true},
+                  {"name": "Branch", "value": "${{ github.ref_name }}", "inline": true},
+                  {"name": "Error", "value": "Failed to clone repo or push changes. Check GIT_TOKEN secret.", "inline": false},
+                  {"name": "Workflow", "value": "[View Run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})", "inline": false}
+                ]
+              }]
+            }' \
+            https://discord.com/api/webhooks/1486690920761004093/a2sIUqGTl4KptVos4_WAaj8wIFnZgSSIlx9nLitspBM0z3qJCryw1ivUwdkVWn0u2VTe
