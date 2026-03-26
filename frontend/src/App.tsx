@@ -55,6 +55,8 @@ function App() {
     } finally {
       setLoading(false);
     }
+
+    //TRIGGER FIX API
   };
 
   return (
