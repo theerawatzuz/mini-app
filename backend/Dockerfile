@@ -3,11 +3,11 @@ FROM node:18-alpine AS builder
 
 WORKDIR /app
 
-# Copy package.json only (not package-lock.json to avoid version conflicts)
+# Copy package.json only
 COPY package.json ./
 
-# Install all dependencies (including devDependencies for build)
-RUN npm install
+# Install all dependencies with legacy peer deps to handle TypeScript 6
+RUN npm install --legacy-peer-deps
 
 # Copy source code
 COPY tsconfig.json ./
@@ -24,8 +24,8 @@ WORKDIR /app
 # Copy package.json only
 COPY package.json ./
 
-# Install only production dependencies
-RUN npm install --omit=dev
+# Install only production dependencies with legacy peer deps
+RUN npm install --omit=dev --legacy-peer-deps
 
 # Copy built files from builder stage
 COPY --from=builder /app/dist ./dist
