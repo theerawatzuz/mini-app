@@ -44,12 +44,18 @@ export class WeatherService {
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
       try {
         const url = this.buildApiUrl(lat, lon);
+        console.log(`[WeatherService] Fetching weather data from: ${url}`);
         const response = await this.axiosInstance.get(url);
+        console.log(`[WeatherService] Response status: ${response.status}`);
 
         // Validate and map external API response to internal WeatherData model
         return this.mapResponseToWeatherData(response.data);
       } catch (error) {
         lastError = error as Error;
+        console.error(
+          `[WeatherService] Error on attempt ${attempt + 1}:`,
+          error,
+        );
 
         // Check for rate limit error (429)
         if (this.isRateLimitError(error)) {
@@ -59,6 +65,7 @@ export class WeatherService {
         // Check for network timeout/connection errors
         if (this.isNetworkError(error)) {
           if (attempt < maxRetries) {
+            console.log(`[WeatherService] Network error, retrying...`);
             continue; // Retry on network errors
           }
           // After retries exhausted, throw ServiceUnavailableError
@@ -66,12 +73,16 @@ export class WeatherService {
         }
 
         // For other errors (API errors, invalid responses), don't retry
+        console.error(`[WeatherService] Non-network error, not retrying`);
         break;
       }
     }
 
     // If we get here, it's likely an API error or unexpected error
     // Throw BadGatewayError for invalid responses
+    console.error(
+      `[WeatherService] All attempts failed, throwing BadGatewayError`,
+    );
     throw new BadGatewayError();
   }
 
@@ -98,9 +109,7 @@ export class WeatherService {
         // Validate required fields exist
         if (
           !data ||
-          !data.name ||
-          !data.sys?.country ||
-          !data.main?.temp ||
+          data.main?.temp === undefined ||
           data.main?.humidity === undefined ||
           !data.weather?.[0]?.description ||
           !data.weather?.[0]?.icon
@@ -110,8 +119,15 @@ export class WeatherService {
           );
         }
 
+        // Handle missing location name or country (e.g., ocean coordinates)
+        const locationName =
+          data.name && data.sys?.country
+            ? `${data.name}, ${data.sys.country}`
+            : data.name ||
+              `${data.coord?.lat?.toFixed(2) || "Unknown"}, ${data.coord?.lon?.toFixed(2) || "Unknown"}`;
+
         return {
-          locationName: `${data.name}, ${data.sys.country}`,
+          locationName,
           temperature: data.main.temp,
           humidity: data.main.humidity,
           condition: data.weather[0].description,

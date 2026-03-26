@@ -1,8 +1,12 @@
+import dotenv from "dotenv";
 import express from "express";
 import cors from "cors";
 import { WeatherController } from "./controllers/WeatherController";
 import { WeatherService } from "./services/WeatherService";
 import { errorHandler } from "./middleware/errorHandler";
+
+// Load environment variables first
+dotenv.config();
 
 const app = express();
 

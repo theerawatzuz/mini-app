@@ -328,22 +328,29 @@ describe("WeatherService", () => {
     });
 
     describe("Invalid Response Data", () => {
-      it("should throw BadGatewayError when OpenWeatherMap response is missing name", async () => {
+      it("should handle missing name by using coordinates as fallback", async () => {
         const axiosInstance = (weatherService as any).axiosInstance;
-        const invalidResponse = {
+        const responseWithoutName = {
           data: {
-            // Missing name
+            // Missing name (e.g., ocean coordinates)
+            coord: { lat: -32.4, lon: 77.3 },
             sys: { country: "TH" },
             main: { temp: 32.5, humidity: 65 },
             weather: [{ description: "Partly Cloudy", icon: "02d" }],
           },
         };
 
-        axiosInstance.get.mockResolvedValue(invalidResponse);
+        axiosInstance.get.mockResolvedValue(responseWithoutName);
 
-        await expect(
-          weatherService.getWeatherByCoordinates(0, 0),
-        ).rejects.toThrow(BadGatewayError);
+        const result = await weatherService.getWeatherByCoordinates(
+          -32.4,
+          77.3,
+        );
+
+        // Should use coordinates as location name when name is missing
+        expect(result.locationName).toContain("-32.40");
+        expect(result.locationName).toContain("77.30");
+        expect(result.temperature).toBe(32.5);
       });
 
       it("should throw BadGatewayError when OpenWeatherMap response is missing temperature", async () => {
