@@ -5,6 +5,11 @@ import {
   BadGatewayError,
   RateLimitError,
 } from "../errors";
+import {
+  weatherApiCallsTotal,
+  weatherApiDuration,
+} from "../middleware/metrics";
+import logger from "../utils/logger";
 
 /**
  * WeatherService
@@ -38,57 +43,72 @@ export class WeatherService {
     lat: number,
     lon: number,
   ): Promise<WeatherData> {
-    const maxRetries = 1; // 1 retry on network failure as per requirement 6.1
-    let lastError: Error | null = null;
+    const maxRetries = 1;
+    const startTime = Date.now();
+
+    logger.info({ lat, lon, provider: this.provider }, "Fetching weather data");
 
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
       try {
         const url = this.buildApiUrl(lat, lon);
-        console.log(`[WeatherService] Fetching weather data from: ${url}`);
         const response = await this.axiosInstance.get(url);
-        console.log(`[WeatherService] Response status: ${response.status}`);
 
-        // Validate and map external API response to internal WeatherData model
-        return this.mapResponseToWeatherData(response.data);
-      } catch (error) {
-        lastError = error as Error;
-        console.error(
-          `[WeatherService] Error on attempt ${attempt + 1}:`,
-          error,
+        const duration = (Date.now() - startTime) / 1000;
+        weatherApiDuration.labels(this.provider).observe(duration);
+        weatherApiCallsTotal.labels(this.provider, "success").inc();
+
+        logger.info(
+          { lat, lon, provider: this.provider, duration, attempt: attempt + 1 },
+          "Weather data fetched successfully",
         );
 
-        // Check for rate limit error (429)
+        return this.mapResponseToWeatherData(response.data);
+      } catch (error) {
+        logger.warn(
+          {
+            lat,
+            lon,
+            provider: this.provider,
+            attempt: attempt + 1,
+            error: (error as Error).message,
+          },
+          "Weather API call failed",
+        );
+
         if (this.isRateLimitError(error)) {
+          weatherApiCallsTotal.labels(this.provider, "rate_limited").inc();
+          logger.error(
+            { lat, lon, provider: this.provider },
+            "Rate limit exceeded",
+          );
           throw new RateLimitError();
         }
 
-        // Check for network timeout/connection errors
         if (this.isNetworkError(error)) {
           if (attempt < maxRetries) {
-            console.log(`[WeatherService] Network error, retrying...`);
-            continue; // Retry on network errors
+            logger.info(
+              { lat, lon, provider: this.provider, attempt: attempt + 1 },
+              "Retrying after network error",
+            );
+            continue;
           }
-          // After retries exhausted, throw ServiceUnavailableError
+          weatherApiCallsTotal.labels(this.provider, "unavailable").inc();
+          logger.error(
+            { lat, lon, provider: this.provider },
+            "Service unavailable after retries",
+          );
           throw new ServiceUnavailableError();
         }
 
-        // For other errors (API errors, invalid responses), don't retry
-        console.error(`[WeatherService] Non-network error, not retrying`);
         break;
       }
     }
 
-    // If we get here, it's likely an API error or unexpected error
-    // Throw BadGatewayError for invalid responses
-    console.error(
-      `[WeatherService] All attempts failed, throwing BadGatewayError`,
-    );
+    weatherApiCallsTotal.labels(this.provider, "error").inc();
+    logger.error({ lat, lon, provider: this.provider }, "Bad gateway error");
     throw new BadGatewayError();
   }
 
-  /**
-   * Builds the API URL based on the provider
-   */
   private buildApiUrl(lat: number, lon: number): string {
     if (this.provider === "openweathermap") {
       return `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${this.apiKey}&units=metric`;
@@ -99,14 +119,9 @@ export class WeatherService {
     }
   }
 
-  /**
-   * Maps external API response to internal WeatherData model
-   * @throws BadGatewayError if response data is invalid or malformed
-   */
   private mapResponseToWeatherData(data: any): WeatherData {
     try {
       if (this.provider === "openweathermap") {
-        // Validate required fields exist
         if (
           !data ||
           data.main?.temp === undefined ||
@@ -119,7 +134,6 @@ export class WeatherService {
           );
         }
 
-        // Handle missing location name or country (e.g., ocean coordinates)
         const locationName =
           data.name && data.sys?.country
             ? `${data.name}, ${data.sys.country}`
@@ -134,7 +148,6 @@ export class WeatherService {
           icon: data.weather[0].icon,
         };
       } else if (this.provider === "weatherapi") {
-        // Validate required fields exist
         if (
           !data ||
           !data.location?.name ||
@@ -160,18 +173,13 @@ export class WeatherService {
         throw new Error(`Unsupported weather provider: ${this.provider}`);
       }
     } catch (error) {
-      // If it's already a BadGatewayError, re-throw it
       if (error instanceof BadGatewayError) {
         throw error;
       }
-      // Otherwise, wrap it in a BadGatewayError
       throw new BadGatewayError("Failed to parse weather data");
     }
   }
 
-  /**
-   * Checks if an error is a rate limit error (429 status)
-   */
   private isRateLimitError(error: any): boolean {
     if (axios.isAxiosError(error)) {
       const axiosError = error as AxiosError;
@@ -180,23 +188,18 @@ export class WeatherService {
     return false;
   }
 
-  /**
-   * Checks if an error is a network error (timeout, connection refused, etc.)
-   */
   private isNetworkError(error: any): boolean {
     if (axios.isAxiosError(error)) {
       const axiosError = error as AxiosError;
-      // Network errors have no response
       return (
         !axiosError.response &&
-        (axiosError.code === "ECONNABORTED" || // Timeout
-          axiosError.code === "ENOTFOUND" || // DNS lookup failed
-          axiosError.code === "ECONNREFUSED" || // Connection refused
-          axiosError.code === "ETIMEDOUT") // Connection timeout
+        (axiosError.code === "ECONNABORTED" ||
+          axiosError.code === "ENOTFOUND" ||
+          axiosError.code === "ECONNREFUSED" ||
+          axiosError.code === "ETIMEDOUT")
       );
     }
 
-    // Check for error code directly on the error object
     const errorCode = (error as any)?.code;
     return !!(
       errorCode === "ECONNABORTED" ||

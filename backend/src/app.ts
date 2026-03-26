@@ -1,9 +1,12 @@
 import dotenv from "dotenv";
 import express from "express";
 import cors from "cors";
+import pinoHttp from "pino-http";
 import { WeatherController } from "./controllers/WeatherController";
 import { WeatherService } from "./services/WeatherService";
 import { errorHandler } from "./middleware/errorHandler";
+import { metricsMiddleware, register } from "./middleware/metrics";
+import logger from "./utils/logger";
 
 // Load environment variables first
 dotenv.config();
@@ -28,13 +31,32 @@ app.use(
 // JSON body parser middleware
 app.use(express.json());
 
-// Request logging middleware (development only)
-if (process.env.NODE_ENV !== "production") {
-  app.use((req, res, next) => {
-    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
-    next();
-  });
-}
+// Structured logging middleware
+app.use(
+  pinoHttp({
+    logger,
+    customLogLevel: (req, res, err) => {
+      if (res.statusCode >= 500 || err) return "error";
+      if (res.statusCode >= 400) return "warn";
+      return "info";
+    },
+    customSuccessMessage: (req, res) => {
+      return `${req.method} ${req.url} ${res.statusCode}`;
+    },
+    customErrorMessage: (req, res, err) => {
+      return `${req.method} ${req.url} ${res.statusCode} - ${err.message}`;
+    },
+  }),
+);
+
+// Metrics middleware
+app.use(metricsMiddleware);
+
+// Metrics endpoint for Prometheus
+app.get("/metrics", async (req, res) => {
+  res.set("Content-Type", register.contentType);
+  res.end(await register.metrics());
+});
 
 // Weather API routes
 app.get("/api/weather", (req, res, next) =>
