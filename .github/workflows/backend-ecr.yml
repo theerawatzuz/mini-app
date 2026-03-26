@@ -156,12 +156,32 @@ jobs:
           cd terraform-eks-scg-demo
 
           NEW_IMAGE="208107894265.dkr.ecr.ap-southeast-1.amazonaws.com/weather-map-backend:prod-${{ steps.meta.outputs.timestamp }}"
+          MANIFEST_FILE="kubernetes/apps/weather-map/backend/deployment.yaml"
 
-          sed -i "s|image: 030635936907.dkr.ecr.ap-southeast-1.amazonaws.com/weather-map-backend:.*|image: ${NEW_IMAGE}|g" kubernetes/apps/weather-map/backend/deployment.yaml
+          if [ ! -f "$MANIFEST_FILE" ]; then
+            echo "Error: Manifest file not found at $MANIFEST_FILE"
+            exit 1
+          fi
+
+          echo "Current image:"
+          grep "image:" "$MANIFEST_FILE" | grep weather-map-backend || echo "No current image found"
+
+          # Update image - replace entire image line
+          sed -i "s|image:.*weather-map-backend:.*|image: ${NEW_IMAGE}|g" "$MANIFEST_FILE"
+
+          echo "New image:"
+          grep "image:" "$MANIFEST_FILE" | grep weather-map-backend
 
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
-          git add kubernetes/apps/weather-map/backend/deployment.yaml
+          git add "$MANIFEST_FILE"
+
+          if git diff --staged --quiet; then
+            echo "Warning: No changes detected - sed may not have matched the pattern"
+            cat "$MANIFEST_FILE"
+            exit 1
+          fi
+
           git commit -m "chore: update backend image to prod-${{ steps.meta.outputs.timestamp }}"
           git push
 
