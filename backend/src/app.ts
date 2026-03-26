@@ -63,7 +63,7 @@ app.get("/api/weather", (req, res, next) =>
   weatherController.getWeather(req, res).catch(next),
 );
 
-// Global error handling middleware (must be last)
+// Global error handling middleware (must be last) update3
 app.use(errorHandler);
 
 export default app;
