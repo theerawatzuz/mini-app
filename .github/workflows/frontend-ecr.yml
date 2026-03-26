@@ -147,3 +147,19 @@ jobs:
               }]
             }' \
             https://discord.com/api/webhooks/1486690920761004093/a2sIUqGTl4KptVos4_WAaj8wIFnZgSSIlx9nLitspBM0z3qJCryw1ivUwdkVWn0u2VTe
+
+      - name: Update Kubernetes manifest
+        if: success()
+        run: |
+          git clone https://${{ secrets.GIT_TOKEN }}@github.com/theerawatzuz/terraform-eks-scg-demo.git
+          cd terraform-eks-scg-demo
+
+          NEW_IMAGE="208107894265.dkr.ecr.ap-southeast-1.amazonaws.com/weather-map-frontend:prod-${{ steps.meta.outputs.timestamp }}"
+
+          sed -i "s|image: 030635936907.dkr.ecr.ap-southeast-1.amazonaws.com/weather-map-frontend:.*|image: ${NEW_IMAGE}|g" kubernetes/apps/weather-map/frontend/deployment.yaml
+
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add kubernetes/apps/weather-map/frontend/deployment.yaml
+          git commit -m "chore: update frontend image to prod-${{ steps.meta.outputs.timestamp }}"
+          git push
