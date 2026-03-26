@@ -64,17 +64,13 @@ jobs:
           SHORT_SHA=$(echo $GITHUB_SHA | cut -c1-7)
           TIMESTAMP=$(date +%Y%m%d-%H%M%S)
 
-          # Set image tags
+          # Set image tags - only timestamp tag
           if [ "$BRANCH_NAME" = "main" ]; then
-            TAGS="${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:latest"
-            TAGS="$TAGS,${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:prod-${SHORT_SHA}"
-            TAGS="$TAGS,${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:prod-${TIMESTAMP}"
+            TAGS="${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:prod-${TIMESTAMP}"
           elif [ "$BRANCH_NAME" = "develop" ]; then
-            TAGS="${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:develop"
-            TAGS="$TAGS,${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:dev-${SHORT_SHA}"
-            TAGS="$TAGS,${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:dev-${TIMESTAMP}"
+            TAGS="${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:dev-${TIMESTAMP}"
           else
-            TAGS="${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${BRANCH_NAME}-${SHORT_SHA}"
+            TAGS="${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${BRANCH_NAME}-${TIMESTAMP}"
           fi
 
           echo "tags=$TAGS" >> $GITHUB_OUTPUT
@@ -152,10 +148,20 @@ jobs:
         if: success()
         id: update-manifest
         run: |
+          # Verify image exists in ECR before updating manifest
+          IMAGE_TAG="prod-${{ steps.meta.outputs.timestamp }}"
+          aws ecr describe-images \
+            --repository-name ${{ env.ECR_REPOSITORY }} \
+            --region ${{ env.AWS_REGION }} \
+            --image-ids imageTag=${IMAGE_TAG} || {
+              echo "Error: Image tag ${IMAGE_TAG} not found in ECR"
+              exit 1
+            }
+
           git clone https://${{ secrets.GIT_TOKEN }}@github.com/theerawatzuz/terraform-eks-scg-demo.git
           cd terraform-eks-scg-demo
 
-          NEW_IMAGE="208107894265.dkr.ecr.ap-southeast-1.amazonaws.com/weather-map-backend:prod-${{ steps.meta.outputs.timestamp }}"
+          NEW_IMAGE="208107894265.dkr.ecr.ap-southeast-1.amazonaws.com/weather-map-backend:${IMAGE_TAG}"
           MANIFEST_FILE="kubernetes/apps/weather-map/backend/deployment.yaml"
 
           if [ ! -f "$MANIFEST_FILE" ]; then
@@ -182,7 +188,7 @@ jobs:
             exit 1
           fi
 
-          git commit -m "chore: update backend image to prod-${{ steps.meta.outputs.timestamp }}"
+          git commit -m "chore: update backend image to ${IMAGE_TAG}"
           git push
 
           echo "new_image=$NEW_IMAGE" >> $GITHUB_OUTPUT
