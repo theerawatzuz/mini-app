@@ -7,4 +7,21 @@ export default defineConfig({
   server: {
     port: 3000,
   },
+  build: {
+    // Optimize bundle size with esbuild (faster than terser)
+    minify: "esbuild",
+    // Code splitting for better performance
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Split vendor code into separate chunk
+          vendor: ["react", "react-dom"],
+          // Split map library into separate chunk
+          maps: ["leaflet"],
+        },
+      },
+    },
+    // Set chunk size warning limit
+    chunkSizeWarningLimit: 500,
+  },
 });

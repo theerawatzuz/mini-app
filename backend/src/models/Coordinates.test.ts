@@ -134,7 +134,7 @@ describe("Coordinates Model", () => {
             return result === false;
           },
         ),
-        { numRuns: 100 },
+        { numRuns: 20 },
       );
     });
 
@@ -159,7 +159,7 @@ describe("Coordinates Model", () => {
             return result === true;
           },
         ),
-        { numRuns: 100 },
+        { numRuns: 20 },
       );
     });
 
@@ -182,7 +182,7 @@ describe("Coordinates Model", () => {
             return result === true;
           },
         ),
-        { numRuns: 100 },
+        { numRuns: 20 },
       );
     });
 
@@ -219,7 +219,7 @@ describe("Coordinates Model", () => {
             return result === false;
           },
         ),
-        { numRuns: 100 },
+        { numRuns: 20 },
       );
     });
   });

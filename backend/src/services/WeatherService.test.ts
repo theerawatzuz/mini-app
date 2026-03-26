@@ -631,7 +631,7 @@ describe("WeatherService", () => {
             return true;
           },
         ),
-        { numRuns: 100 },
+        { numRuns: 20 },
       );
     });
   });

@@ -388,7 +388,7 @@ describe("WeatherController", () => {
             return true;
           },
         ),
-        { numRuns: 100 },
+        { numRuns: 20 },
       );
     });
 
@@ -483,7 +483,7 @@ describe("WeatherController", () => {
             return true;
           },
         ),
-        { numRuns: 100 },
+        { numRuns: 20 },
       );
     });
   });

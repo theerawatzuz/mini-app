@@ -1,0 +1,155 @@
+.weather-display {
+  padding: 1.5rem;
+  border-radius: 8px;
+  background-color: #f8f9fa;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease-in-out;
+}
+
+/* Loading state */
+.weather-display.loading {
+  background-color: #e3f2fd;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #2196f3;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.weather-display.loading p {
+  color: #1976d2;
+  font-weight: 500;
+}
+
+/* Error state */
+.weather-display.error {
+  background-color: #ffebee;
+}
+
+.error-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.error-message {
+  color: #c62828;
+  font-weight: 500;
+  text-align: center;
+  max-width: 400px;
+}
+
+/* Data display state */
+.weather-display.data {
+  background-color: #ffffff;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.location-name {
+  color: #333;
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+  text-align: center;
+  transition: color 0.3s ease;
+}
+
+.weather-icon-container {
+  margin: 1rem 0;
+  transition: transform 0.3s ease;
+}
+
+.weather-icon-container:hover {
+  transform: scale(1.1);
+}
+
+.weather-icon {
+  width: 100px;
+  height: 100px;
+  object-fit: contain;
+}
+
+.weather-info {
+  width: 100%;
+  max-width: 300px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.weather-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5rem;
+  background-color: #f5f5f5;
+  border-radius: 4px;
+  transition:
+    background-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.weather-item:hover {
+  background-color: #e0e0e0;
+  transform: translateX(5px);
+}
+
+.weather-item .label {
+  color: #666;
+  font-weight: 500;
+}
+
+.weather-item .value {
+  color: #333;
+  font-weight: 600;
+}
+
+.weather-item.temperature .value {
+  color: #ff6b6b;
+}
+
+.weather-item.humidity .value {
+  color: #4dabf7;
+}
+
+.weather-item.condition .value {
+  color: #51cf66;
+}
+
+/* Empty state */
+.weather-display.empty {
+  background-color: #fafafa;
+  border: 2px dashed #ccc;
+}
+
+.weather-display.empty p {
+  color: #999;
+  font-style: italic;
+}

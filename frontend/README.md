@@ -72,7 +72,11 @@ The URL of your backend API service. This is where the frontend will send weathe
 - Development: `http://localhost:3001`
 - Production: `https://your-backend-api.com`
 
-**Important:** Do not include a trailing slash in the URL.
+**Important:**
+
+- Do not include a trailing slash in the URL.
+- For Vite applications, environment variables must be prefixed with `VITE_` to be exposed to the client-side code.
+- Changes to `.env` require restarting the development server.
 
 ## Development
 

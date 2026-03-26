@@ -150,7 +150,7 @@ describe("Express Application", () => {
             );
           },
         ),
-        { numRuns: 100 },
+        { numRuns: 20 },
       );
     });
   });

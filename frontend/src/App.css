@@ -1,13 +1,94 @@
 .App {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 1rem;
+}
+
+.app-header {
   text-align: center;
-  padding: 2rem;
+  color: white;
+  margin-bottom: 2rem;
 }
 
-h1 {
-  color: #333;
-  margin-bottom: 1rem;
+.app-header h1 {
+  color: white;
+  margin: 0 0 0.5rem 0;
+  font-size: 2.5rem;
+  font-weight: 700;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
 }
 
-p {
-  color: #666;
+.app-subtitle {
+  color: rgba(255, 255, 255, 0.9);
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.app-main {
+  flex: 1;
+  display: flex;
+  gap: 1.5rem;
+  max-width: 1400px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.map-container {
+  flex: 2;
+  min-width: 0;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+}
+
+.weather-container {
+  flex: 1;
+  min-width: 300px;
+  max-width: 400px;
+}
+
+/* Responsive design for mobile */
+@media (max-width: 768px) {
+  .App {
+    padding: 0.5rem;
+  }
+
+  .app-header h1 {
+    font-size: 1.8rem;
+  }
+
+  .app-subtitle {
+    font-size: 0.9rem;
+  }
+
+  .app-main {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .map-container {
+    height: 400px;
+  }
+
+  .weather-container {
+    max-width: 100%;
+  }
+}
+
+/* Responsive design for tablets */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .app-main {
+    flex-direction: column;
+  }
+
+  .map-container {
+    height: 500px;
+  }
+
+  .weather-container {
+    max-width: 100%;
+  }
 }

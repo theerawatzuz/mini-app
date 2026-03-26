@@ -2,8 +2,11 @@ export default {
   preset: "ts-jest",
   testEnvironment: "jsdom",
   moduleNameMapper: {
-    "\\.(css|less|scss|sass)$": "identity-obj-proxy",
+    "^.+\\.css$": "identity-obj-proxy",
+    "\\.(jpg|jpeg|png|gif|svg)(\\?url)?$":
+      "<rootDir>/src/__mocks__/fileMock.js",
   },
+  transformIgnorePatterns: ["node_modules/(?!(leaflet)/)"],
   setupFilesAfterEnv: ["<rootDir>/src/setupTests.ts"],
   transform: {
     "^.+\\.tsx?$": [
