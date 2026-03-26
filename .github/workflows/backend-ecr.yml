@@ -103,3 +103,47 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "Image Tags:" >> $GITHUB_STEP_SUMMARY
           echo "${{ steps.meta.outputs.tags }}" | tr ',' '\n' >> $GITHUB_STEP_SUMMARY
+
+      - name: Discord notification on success
+        if: success()
+        run: |
+          curl -H "Content-Type: application/json" \
+            -d '{
+              "content": "✅ **Backend Build Success**",
+              "embeds": [{
+                "title": "Backend Image Pushed to ECR",
+                "color": 3066993,
+                "fields": [
+                  {"name": "Repository", "value": "${{ env.ECR_REPOSITORY }}", "inline": true},
+                  {"name": "Region", "value": "${{ env.AWS_REGION }}", "inline": true},
+                  {"name": "Branch", "value": "${{ github.ref_name }}", "inline": true},
+                  {"name": "Commit", "value": "`${{ steps.meta.outputs.short_sha }}`", "inline": true},
+                  {"name": "Author", "value": "${{ github.actor }}", "inline": true},
+                  {"name": "Timestamp", "value": "${{ steps.meta.outputs.timestamp }}", "inline": true},
+                  {"name": "Image Tags", "value": "```${{ steps.meta.outputs.tags }}```", "inline": false},
+                  {"name": "Workflow", "value": "[View Run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})", "inline": false}
+                ]
+              }]
+            }' \
+            https://discord.com/api/webhooks/1486690920761004093/a2sIUqGTl4KptVos4_WAaj8wIFnZgSSIlx9nLitspBM0z3qJCryw1ivUwdkVWn0u2VTe
+
+      - name: Discord notification on failure
+        if: failure()
+        run: |
+          curl -H "Content-Type: application/json" \
+            -d '{
+              "content": "❌ **Backend Build Failed**",
+              "embeds": [{
+                "title": "Backend Build Error",
+                "color": 15158332,
+                "fields": [
+                  {"name": "Repository", "value": "${{ env.ECR_REPOSITORY }}", "inline": true},
+                  {"name": "Branch", "value": "${{ github.ref_name }}", "inline": true},
+                  {"name": "Commit", "value": "`${{ github.sha }}`", "inline": true},
+                  {"name": "Author", "value": "${{ github.actor }}", "inline": true},
+                  {"name": "Error", "value": "Build or push to ECR failed", "inline": false},
+                  {"name": "Workflow", "value": "[View Run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})", "inline": false}
+                ]
+              }]
+            }' \
+            https://discord.com/api/webhooks/1486690920761004093/a2sIUqGTl4KptVos4_WAaj8wIFnZgSSIlx9nLitspBM0z3qJCryw1ivUwdkVWn0u2VTe
