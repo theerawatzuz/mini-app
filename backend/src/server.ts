@@ -1,3 +1,6 @@
+// Initialize OpenTelemetry tracing FIRST
+import "./tracing";
+
 import dotenv from "dotenv";
 import app from "./app";
 import { Server } from "http";
