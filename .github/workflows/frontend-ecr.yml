@@ -163,7 +163,7 @@ jobs:
           git clone https://${{ secrets.GIT_TOKEN }}@github.com/theerawatzuz/terraform-eks-scg-demo.git
           cd terraform-eks-scg-demo
 
-          NEW_IMAGE="208107894265.dkr.ecr.ap-southeast-1.amazonaws.com/weather-map-frontend:${IMAGE_TAG}"
+          NEW_IMAGE="030635936907.dkr.ecr.ap-southeast-1.amazonaws.com/weather-map-frontend:${IMAGE_TAG}"
           MANIFEST_FILE="kubernetes/apps/weather-map/frontend/deployment.yaml"
 
           if [ ! -f "$MANIFEST_FILE" ]; then
